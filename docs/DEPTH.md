@@ -35,10 +35,16 @@
 | TRAP-20 | 谱系环 | 静默接受或丢失证据 | 明确归一、拒绝或保留诊断 | `app/modules/genealogy/graph.py` | `tests/test_genealogy.py::test_cycle` |
 | TRAP-21 | 来源失联 | 静默接受或丢失证据 | 明确归一、拒绝或保留诊断 | `app/modules/quarantine/checks.py` | `tests/test_quarantine.py::test_orphan` |
 | TRAP-26 | 旧版复核覆盖 | 静默接受或丢失证据 | 明确归一、拒绝或保留诊断 | `app/store.py` | `tests/test_batches.py::test_optimistic_lock` |
+| TRAP-30 | 跨班在制被当成异常 | 要求中间批当场用完，正常跨班结存误判异常 | 只把中间批守恒正结存记待转在制，成品/原料结存另列 | `app/modules/reconcile/closing.py` | `tests/test_closing.py::test_pending_transfer_is_wip_balance_not_anomaly` |
+| TRAP-31 | 短缺错投藏进在制 | 把剩余量一锅端算正常结存，真实异常被在制掩盖 | 带物料异常原因码的批逐批单列、按原始行重算，不进在制 | `app/modules/reconcile/closing.py` | `tests/test_closing.py::test_mass_gap_shortage_is_abnormal_not_hidden_in_wip` |
+| TRAP-32 | 重结覆盖旧结论 | 重跑追加记录或覆盖已签字结果 | 快照内容寻址幂等、不可变；签字乐观锁、失败回滚、恢复追加新版 | `app/store.py` | `tests/test_closing_store.py` |
 
 ## 对账规则
 
 输入业务行=有效投料+隔离行+重复/旧版/撤回行。空行和重复表头独立记录，不计入业务行。每个目标批次投入=产出+损耗；中间批次可领用不得大于产出。汇总是生产发生量，多个工序发生量会累积，同一物料在不同工序分别出现。
+
+班次结账逐批拆四量：已用、结存、待转在制、异常。待转在制只承认中间批（非R-非F-）守恒且未隔离的正结存；成品结存为完工待入库、原料结存为库存，均不计在制。带 MASS_GAP/OVERDRAW/ORPHAN 等物料异常原因码的批按原始行重算并单列，短缺仅对 MASS_GAP 计数值，其余给原因码；版本裁决类（VOID/SUPERSEDED/DUPLICATE）不算物料异常。结账快照不可变，同内容重结幂等不新增，签字走乐观锁，恢复以追加新版方式保留全部历史，写入失败整事务回滚。
+
 
 ## 设计取舍
 

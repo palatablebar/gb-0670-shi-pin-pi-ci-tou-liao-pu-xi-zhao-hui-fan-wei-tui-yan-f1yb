@@ -35,7 +35,7 @@ docker compose exec -T app pytest -q
 | /reconcile | POST /api/reconcile |
 | /batches | POST /api/runs |
 
-`POST /api/runs`接收sample（clean/dirty/legacy）、seeds，或text/source_b64自定义CSV。`POST /api/runs/{id}/rerun`按原始字节与参数重跑。`POST /api/runs/{id}/review`带version、state和note复核；陈旧版本返回409。`GET /api/runs/{id}/evidence.csv`导出唯一证据清单。完整字段见/docs接口文档及docs/DATA-DICTIONARY.md。
+`POST /api/runs`接收sample（clean/dirty/legacy）、seeds，或text/source_b64自定义CSV。`POST /api/runs/{id}/rerun`按原始字节与参数重跑。`POST /api/runs/{id}/review`带version、state和note复核；陈旧版本返回409。`GET /api/runs/{id}/evidence.csv`导出唯一证据清单。班次结账在对账页：`POST /api/reconcile/runs/{id}/close`生成不可变结账快照（同内容重结幂等不新增），`GET /api/reconcile/runs/{id}/closings`列全部版次，`POST .../closings/{seq}/sign`按signed_version乐观锁签字，`POST .../closings/{seq}/restore`把历史版恢复为当前可签字结果且保留全部旧版。完整字段见/docs接口文档及docs/DATA-DICTIONARY.md。
 
 源码按app/modules业务模块划分；tests随项目交付；sample_data提供48笔干净样例与多种异常；演示步骤见docs/SCENARIOS.md，深度登记见docs/DEPTH.md。
 
